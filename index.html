@@ -3,88 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Philanthropy Master Calendar</title>
+    <title>Philanthropy Outreach Calendar - Fail-Safe Version</title>
     <style>
-        :root { --primary: #3498db; --bg: #f4f7f9; --card: #ffffff; --text: #2c3e50; --edit: #f1c40f; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 20px; background-color: var(--bg); color: var(--text); }
-        .container { max-width: 1400px; margin: 0 auto; background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { text-align: center; border-bottom: 3px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px; }
+        /* --- Clean, Modern Styling --- */
+        :root { --blue: #3498db; --green: #2ecc71; --red: #e74c3c; --text: #2c3e50; --bg: #f4f7f9; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; shadow: 0 4px 10px rgba(0,0,0,0.1); }
         
-        .controls { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-        form { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #ddd; width: 100%; transition: 0.3s; box-sizing: border-box;}
-        form.editing-mode { border: 2px solid var(--edit); background: #fffdf5; box-shadow: 0 0 10px rgba(241, 196, 15, 0.3); }
-        
-        .date-container { grid-column: span 4; background: white; padding: 15px; border: 1px dashed var(--primary); border-radius: 6px; }
-        .date-range { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
-        
-        button { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; transition: 0.3s; }
-        .btn-add { background-color: var(--primary); }
-        .btn-save { background-color: var(--edit); color: #000; }
-        .btn-util { background-color: #7f8c8d; font-size: 0.8em; }
-        .btn-del { background-color: #e74c3c; padding: 5px 10px; }
+        /* --- Form Layout --- */
+        form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; background: #eee; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        input, select, button { padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 1rem; }
+        .full-width { grid-column: 1 / -1; }
+        .btn-main { background: var(--blue); color: white; border: none; cursor: pointer; font-weight: bold; }
+        .btn-main:hover { background: #2980b9; }
 
-        .calendar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 15px; margin-top: 20px; }
-        .month-card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 10px; min-height: 250px;}
-        .month-name { text-align: center; font-weight: bold; padding: 5px 0; background: #f8f9fa; border-radius: 4px; margin-bottom: 10px; }
-        
+        /* --- Calendar Grid --- */
+        .calendar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+        .month-box { background: white; border: 1px solid #ddd; padding: 10px; border-radius: 5px; }
+        .month-title { text-align: center; font-weight: bold; margin-bottom: 10px; background: #34495e; color: white; padding: 5px; border-radius: 3px; }
         .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-        .day-label { font-size: 0.65em; text-align: center; font-weight: bold; color: #95a5a6; padding-bottom: 4px; }
+        .day-head { font-size: 0.7rem; text-align: center; font-weight: bold; color: #7f8c8d; }
+        .day { aspect-ratio: 1/1; border: 1px solid #eee; font-size: 0.7rem; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; cursor: pointer; }
+        .day:hover { background: #f1f1f1; }
+        .day-num { z-index: 2; }
         
-        .day { 
-            aspect-ratio: 1.1 / 1; 
-            border: 1px solid #f0f0f0; 
-            font-size: 0.75em; 
-            position: relative; 
-            display: flex; 
-            flex-direction: column;
-            align-items: center; 
-            justify-content: flex-start;
-            padding-top: 5px;
-            border-radius: 2px; 
-            cursor: pointer; 
-            overflow: hidden;
-            min-height: 40px;
-        }
-        .day.empty { border: none; cursor: default; }
+        /* --- Multi-Event Bars --- */
+        .bar-stack { width: 100%; position: absolute; bottom: 0; display: flex; flex-direction: column; gap: 1px; }
+        .bar { height: 3px; width: 100%; }
 
-        .event-bars { width: 100%; display: flex; flex-direction: column; gap: 1px; position: absolute; bottom: 0; left: 0; }
-        .event-bar { height: 4px; width: 100%; }
-        
-        .tooltip:hover::after {
-            content: attr(data-events); position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%);
-            background: #2c3e50; color: white; padding: 6px 10px; border-radius: 4px; font-size: 0.8em; white-space: pre; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
+        /* --- Table --- */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        th { background: #34495e; color: white; }
+        .overlap-warn { color: #e67e22; font-weight: bold; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 30px; }
-        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
-        tr.clickable { cursor: pointer; }
-        tr.clickable:hover { background-color: #f1f8ff; }
-        th { background: var(--primary); color: white; }
+        /* --- Debug Footer --- */
+        #debug-log { font-family: monospace; font-size: 0.7rem; color: #777; margin-top: 50px; border-top: 1px solid #ccc; padding-top: 10px; }
         
-        @media print { .no-print { display: none !important; } .calendar-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media print { .no-print { display: none; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🗓️ Outreach & Communications Calendar</h1>
-
-    <div class="controls no-print">
-        <div>
-            <button class="btn-util" style="background:#9b59b6" onclick="toggleFiscalMode()">Toggle Fiscal (Apr Start)</button>
-            <button class="btn-util" onclick="exportData()">📋 Copy Data</button>
-            <button class="btn-util" onclick="importData()">📥 Import Data</button>
-        </div>
-        <button class="btn-util" style="background: #2ecc71" onclick="window.print()">🖨️ Save PDF</button>
-    </div>
+    <h1>🗓️ Outreach & Comms Calendar</h1>
 
     <form id="outreachForm" class="no-print">
-        <div style="grid-column: span 2;">
-            <label id="formLabel">Add New Activity</label>
-            <input type="text" id="itemName" style="width:100%" required placeholder="Campaign Name">
+        <div class="full-width">
+            <label><strong>Activity Name:</strong></label><br>
+            <input type="text" id="itemName" style="width:98%" required placeholder="e.g. End of Year Appeal">
         </div>
-        <div style="grid-column: span 2;">
-            <label>Color</label>
+        <div>
+            <label>Color:</label><br>
             <select id="color" style="width:100%">
                 <option value="#3498db">Blue</option>
                 <option value="#2ecc71">Green</option>
@@ -92,196 +62,168 @@
                 <option value="#e74c3c">Red</option>
                 <option value="#9b59b6">Purple</option>
                 <option value="#e67e22">Orange</option>
-                <option value="#1abc9c">Turquoise</option>
-                <option value="#34495e">Navy</option>
             </select>
         </div>
-
-        <div class="date-container">
-            <label><strong>Outreach Timeframe(s)</strong></label>
-            <div id="dateRanges">
-                <div class="date-range">
-                    <input type="date" class="startDate" required>
-                    <input type="date" class="endDate" required>
-                </div>
-            </div>
-            <button type="button" class="btn-util" style="background:#27ae60; margin-top:5px;" onclick="addDateRow()">+ Add Another Range</button>
+        <div>
+            <label>Start Date:</label><br>
+            <input type="date" id="startDate" style="width:100%" required>
         </div>
-        <div style="grid-column: span 4; display: flex; justify-content: flex-end; gap: 10px;">
-            <button type="button" id="cancelEdit" class="btn-util" style="display:none;" onclick="resetForm()">Cancel</button>
-            <button type="submit" id="submitBtn" class="btn-add">Update Calendar</button>
+        <div>
+            <label>End Date:</label><br>
+            <input type="date" id="endDate" style="width:100%" required>
         </div>
+        <button type="submit" class="btn-main" id="submitBtn" style="align-self: end;">Add to Calendar</button>
     </form>
 
-    <div id="calendar" class="calendar-grid"></div>
+    <div id="calendar-view" class="calendar-grid"></div>
 
-    <h2>📑 Chronological Breakdown (Click to Edit)</h2>
-    <table id="breakdownTable">
+    <h2>📑 Chronological List</h2>
+    <table id="dataTable">
         <thead>
-            <tr><th>Activity</th><th>Dates</th><th>Status</th><th class="no-print">Action</th></tr>
+            <tr><th>Activity</th><th>Dates</th><th>Status</th><th>Actions</th></tr>
         </thead>
         <tbody></tbody>
     </table>
+
+    <div id="debug-log">System Status: Initializing...</div>
 </div>
 
 <script>
-    // Self-contained logic: No external libraries required for core rendering
-    let dataStore = JSON.parse(localStorage.getItem('fiscalData')) || [];
-    let fiscalMode = false;
-    let currentEditId = null;
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    // --- Data Management ---
+    let outreachData = [];
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const log = document.getElementById('debug-log');
 
-    function addDateRow(start = '', end = '') {
-        const div = document.createElement('div');
-        div.className = 'date-range';
-        div.innerHTML = `<input type="date" class="startDate" value="${start}" required>
-                         <input type="date" class="endDate" value="${end}" required>
-                         <button type="button" class="btn-del" onclick="this.parentElement.remove()">X</button>`;
-        document.getElementById('dateRanges').appendChild(div);
+    // Load from LocalStorage
+    try {
+        const saved = localStorage.getItem('outreach_db');
+        if (saved) outreachData = JSON.parse(saved);
+        log.innerText = "System Status: Data Loaded. Total items: " + outreachData.length;
+    } catch (e) {
+        log.innerText = "System Status: Error loading local storage.";
     }
 
-    document.getElementById('outreachForm').onsubmit = (e) => {
+    // Form Submit
+    document.getElementById('outreachForm').onsubmit = function(e) {
         e.preventDefault();
-        const ranges = [];
-        document.querySelectorAll('.date-range').forEach(row => {
-            const s = row.querySelector('.startDate').value;
-            const e = row.querySelector('.endDate').value;
-            if(s && e) ranges.push({ start: s, end: e });
-        });
-
-        const entry = { 
-            id: currentEditId || Date.now(), 
-            name: document.getElementById('itemName').value, 
-            color: document.getElementById('color').value, 
-            ranges 
+        const newItem = {
+            id: Date.now(),
+            name: document.getElementById('itemName').value,
+            color: document.getElementById('color').value,
+            start: document.getElementById('startDate').value,
+            end: document.getElementById('endDate').value
         };
 
-        if (currentEditId) {
-            dataStore = dataStore.map(item => item.id === currentEditId ? entry : item);
-        } else {
-            dataStore.push(entry);
-        }
-
-        saveAndUpdate();
-        resetForm();
+        outreachData.push(newItem);
+        saveData();
+        this.reset();
     };
 
-    function saveAndUpdate() {
-        localStorage.setItem('fiscalData', JSON.stringify(dataStore));
+    function saveData() {
+        localStorage.setItem('outreach_db', JSON.stringify(outreachData));
+        refreshUI();
+    }
+
+    function deleteItem(id) {
+        outreachData = outreachData.filter(i => i.id !== id);
+        saveData();
+    }
+
+    function refreshUI() {
         renderCalendar();
         renderTable();
     }
 
+    // --- Calendar Logic ---
     function renderCalendar() {
-        const container = document.getElementById('calendar');
-        container.innerHTML = '';
-        const start = getStartPoint();
+        const view = document.getElementById('calendar-view');
+        view.innerHTML = "";
+
+        // Find range to display
+        let startYear = new Date().getFullYear();
+        let startMonth = 0; // Default Jan
+
+        if (outreachData.length > 0) {
+            const sorted = [...outreachData].sort((a,b) => a.start.localeCompare(b.start));
+            const firstDate = new Date(sorted[0].start + "T00:00:00");
+            startYear = firstDate.getFullYear();
+            startMonth = firstDate.getMonth();
+        }
 
         for (let i = 0; i < 12; i++) {
-            let m = start.month + i;
-            let y = start.year + Math.floor(m / 12);
-            container.appendChild(createMonthCard(m % 12, y));
+            let m = (startMonth + i) % 12;
+            let y = startYear + Math.floor((startMonth + i) / 12);
+            view.appendChild(createMonth(m, y));
         }
     }
 
-    function createMonthCard(m, y) {
-        const card = document.createElement('div');
-        card.className = 'month-card';
-        card.innerHTML = `<div class="month-name">${monthNames[m]} ${y}</div>`;
+    function createMonth(m, y) {
+        const box = document.createElement('div');
+        box.className = 'month-box';
+        box.innerHTML = `<div class="month-title">${months[m]} ${y}</div>`;
+
         const grid = document.createElement('div');
         grid.className = 'days-grid';
-        ['S','M','T','W','T','F','S'].forEach(d => grid.innerHTML += `<div class="day-label">${d}</div>`);
         
+        ['S','M','T','W','T','F','S'].forEach(d => grid.innerHTML += `<div class="day-head">${d}</div>`);
+
         const firstDay = new Date(y, m, 1).getDay();
-        const daysCount = new Date(y, m + 1, 0).getDate();
+        const daysInMonth = new Date(y, m + 1, 0).getDate();
 
-        for (let x = 0; x < firstDay; x++) grid.innerHTML += `<div class="day empty"></div>`;
+        for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="day empty"></div>`;
 
-        for (let d = 1; d <= daysCount; d++) {
-            const dStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-            const matches = dataStore.filter(item => item.ranges.some(r => dStr >= r.start && dStr <= r.end));
-            
-            const dayEl = document.createElement('div');
-            dayEl.className = 'day';
-            dayEl.innerHTML = `<span class="day-num">${d}</span>`;
-            
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const matches = outreachData.filter(item => dateStr >= item.start && dateStr <= item.end);
+
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'day';
+            dayDiv.innerHTML = `<span class="day-num">${d}</span>`;
+
             if (matches.length > 0) {
-                dayEl.classList.add('tooltip');
-                dayEl.setAttribute('data-events', matches.map(e => e.name).join('\n'));
-                
-                const barContainer = document.createElement('div');
-                barContainer.className = 'event-bars';
-                matches.forEach(match => {
+                const stack = document.createElement('div');
+                stack.className = 'bar-stack';
+                matches.forEach(m => {
                     const bar = document.createElement('div');
-                    bar.className = 'event-bar';
-                    bar.style.backgroundColor = match.color;
-                    barContainer.appendChild(bar);
+                    bar.className = 'bar';
+                    bar.style.backgroundColor = m.color;
+                    stack.appendChild(bar);
                 });
-                dayEl.appendChild(barContainer);
-                dayEl.onclick = () => editItem(matches[0].id);
+                dayDiv.appendChild(stack);
+                dayDiv.title = matches.map(m => m.name).join(", ");
             }
-            grid.appendChild(dayEl);
+            grid.appendChild(dayDiv);
         }
-        card.appendChild(grid);
-        return card;
+        box.appendChild(grid);
+        return box;
     }
 
-    function getStartPoint() {
-        if (fiscalMode) {
-            const today = new Date();
-            const year = today.getMonth() < 3 ? today.getFullYear() - 1 : today.getFullYear();
-            return { month: 3, year: year };
-        }
-        let earliest = null;
-        dataStore.forEach(item => item.ranges.forEach(r => {
-            const d = new Date(r.start + "T00:00:00"); // ISO parse
-            if (!earliest || d < earliest) earliest = d;
-        }));
-        const ref = earliest || new Date();
-        return { month: ref.getMonth(), year: ref.getFullYear() };
-    }
-
+    // --- Table Logic ---
     function renderTable() {
-        const tbody = document.querySelector('#breakdownTable tbody');
-        tbody.innerHTML = '';
-        let allItems = [];
-        dataStore.forEach(item => {
-            item.ranges.forEach(r => allItems.push({...r, name: item.name, color: item.color, id: item.id}));
-        });
-        allItems.sort((a,b) => new Date(a.start) - new Date(b.start));
+        const tbody = document.querySelector('#dataTable tbody');
+        tbody.innerHTML = "";
+        
+        const sorted = [...outreachData].sort((a,b) => a.start.localeCompare(b.start));
 
-        allItems.forEach(row => {
-            const overlap = allItems.some(other => other.id !== row.id && row.start <= other.end && row.end >= other.start);
-            const tr = document.createElement('tr');
-            tr.className = 'clickable';
-            tr.onclick = () => editItem(row.id);
-            tr.innerHTML = `<td style="border-left: 5px solid ${row.color}"><strong>${row.name}</strong></td>
-                            <td>${row.start} to ${row.end}</td>
-                            <td>${overlap ? '<span style="color:#e67e22">⚠️ Overlap</span>' : '✅ Clear'}</td>
-                            <td class="no-print"><button class="btn-del" onclick="event.stopPropagation(); deleteItem(${row.id})">Delete</button></td>`;
-            tbody.appendChild(tr);
+        sorted.forEach(item => {
+            const isOverlap = sorted.some(other => 
+                other.id !== item.id && item.start <= other.end && item.end >= other.start
+            );
+
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td style="border-left: 5px solid ${item.color}"><strong>${item.name}</strong></td>
+                <td>${item.start} to ${item.end}</td>
+                <td>${isOverlap ? '<span class="overlap-warn">⚠️ Overlap</span>' : '✅ Clear'}</td>
+                <td><button onclick="deleteItem(${item.id})" style="background:#e74c3c; color:white; border:none; padding:5px; border-radius:3px; cursor:pointer;">Delete</button></td>
+            `;
         });
     }
 
-    function editItem(id) {
-        const item = dataStore.find(i => i.id === id);
-        if (!item) return;
-        currentEditId = id;
-        document.getElementById('itemName').value = item.name;
-        document.getElementById('color').value = item.color;
-        const rangeContainer = document.getElementById('dateRanges');
-        rangeContainer.innerHTML = '';
-        item.ranges.forEach(r => addDateRow(r.start, r.end));
-        document.getElementById('outreachForm').classList.add('editing-mode');
-        document.getElementById('formLabel').innerHTML = "<strong>Editing: " + item.name + "</strong>";
-        document.getElementById('submitBtn').innerText = "Save Changes";
-        document.getElementById('submitBtn').className = "btn-save";
-        document.getElementById('cancelEdit').style.display = "inline-block";
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    // Initialize
+    refreshUI();
 
-    function resetForm() {
-        currentEditId = null;
-        document.getElementById('outreachForm').reset();
-        document.getElementById('outreachForm').classList.remove('editing-mode');
-        document.getElementById('formLabel').innerText = "Add New Activity";
+</script>
+
+</body>
+</html>
