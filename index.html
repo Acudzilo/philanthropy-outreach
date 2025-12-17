@@ -2,64 +2,216 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Philanthropy Master Calendar v3</title>
+    <title>Outreach Calendar - Ultra Light</title>
     <style>
-        :root { --primary: #3498db; --edit-bg: #fffdf0; --edit-border: #f1c40f; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; padding: 20px; color: #333; margin: 0; }
-        .container { max-width: 1200px; margin: 20px auto; background: white; padding: 25px; border-radius: 12px; border: 1px solid #ccc; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        body { font-family: sans-serif; background: #f0f2f5; margin: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; border: 1px solid #ccc; }
         
-        form { background: #f8f9fa; padding: 20px; border-radius: 8px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; border: 1px solid #ddd; }
-        form.editing { background: var(--edit-bg); border: 2px solid var(--edit-border); }
-        .full-width { grid-column: 1 / -1; }
-        
-        input, select, button { padding: 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; }
-        .btn-main { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: bold; }
-        .btn-save { background: var(--edit-border); color: #333; border: none; font-weight: bold; cursor: pointer;}
-        
-        .calendar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 20px; }
-        .month { background: white; border: 1px solid #ddd; padding: 10px; border-radius: 6px; min-height: 250px; }
-        .month-title { text-align: center; font-weight: bold; margin-bottom: 10px; padding: 5px; background: #34495e; color: white; border-radius: 4px; }
-        
-        .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-        .day { aspect-ratio: 1.1; border: 1px solid #f9f9f9; font-size: 11px; position: relative; display: flex; align-items: center; justify-content: center; background: #fff; }
-        .day-num { z-index: 5; font-weight: bold; }
-        
-        .bar-stack { position: absolute; bottom: 0; width: 100%; display: flex; flex-direction: column; gap: 1px; }
-        .bar { height: 4px; width: 100%; }
+        /* Form Setup */
+        .form-box { background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; }
+        .grid-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+        input, select, button { padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
+        .btn-add { background: #3498db; color: white; font-weight: bold; cursor: pointer; border: none; }
+        .btn-add:hover { background: #2980b9; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 30px; background: white; }
-        th, td { border: 1px solid #eee; padding: 12px; text-align: left; }
+        /* Calendar Grid */
+        .calendar-section { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+        .month-wrap { background: #fff; border: 1px solid #ddd; padding: 10px; border-radius: 5px; }
+        .month-label { text-align: center; font-weight: bold; margin-bottom: 10px; background: #34495e; color: white; padding: 5px; }
+        .day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+        .d-head { font-size: 10px; text-align: center; color: #999; font-weight: bold; }
+        .d-cell { aspect-ratio: 1; border: 1px solid #eee; font-size: 11px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; cursor: pointer; }
+        
+        /* Multi-Color Bars */
+        .bars { position: absolute; bottom: 0; width: 100%; display: flex; flex-direction: column; gap: 1px; }
+        .b { height: 3px; width: 100%; }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; font-size: 14px; }
         th { background: #34495e; color: white; }
-        tr.row-item:hover { background: #f1f8ff; cursor: pointer; }
-        .swatch { width: 12px; height: 12px; display: inline-block; border-radius: 2px; margin-right: 8px; }
 
-        #status-bar { margin-top: 20px; padding: 10px; background: #222; color: #0f0; font-family: monospace; font-size: 12px; border-radius: 4px; }
+        #system-check { padding: 10px; margin-bottom: 10px; background: #e8f4fd; border: 1px solid #3498db; color: #2980b9; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 style="text-align: center;">📊 Philanthropy Outreach Master Calendar</h2>
-    
-    <form id="calForm">
-        <div class="full-width">
-            <label id="mode-text"><strong>Add New Activity</strong></label><br>
-            <input type="text" id="name" style="width:98%" required placeholder="Activity Name">
-        </div>
-        <div>
-            <label>Color:</label><br>
-            <select id="color" style="width:100%">
-                <option value="#3498db">Blue</option>
-                <option value="#2ecc71">Green</option>
-                <option value="#e74c3c">Red</option>
-                <option value="#f1c40f">Yellow</option>
-                <option value="#9b59b6">Purple</option>
-                <option value="#e67e22">Orange</option>
-                <option value="#1abc9c">Turquoise</option>
-                <option value="#34495e">Navy</option>
-                <option value="#fd79a8">Pink</option>
-                <option value="#636e72">Grey</option>
-            </select>
-        </div>
-        <div>
-            <label>Start Date:</label><br>
+    <div id="system-check">System Status: Testing Connection...</div>
+    <h2>Philanthropy Outreach Calendar</h2>
+
+    <div class="form-box">
+        <form id="mainForm">
+            <div class="grid-inputs">
+                <div style="grid-column: span 2;">
+                    Activity: <input type="text" id="name" style="width:90%" required>
+                </div>
+                <div>
+                    Color: 
+                    <select id="color" style="width:100%">
+                        <option value="#3498db">Blue</option>
+                        <option value="#2ecc71">Green</option>
+                        <option value="#e74c3c">Red</option>
+                        <option value="#f1c40f">Yellow</option>
+                        <option value="#9b59b6">Purple</option>
+                        <option value="#e67e22">Orange</option>
+                        <option value="#1abc9c">Turquoise</option>
+                        <option value="#34495e">Navy</option>
+                        <option value="#fd79a8">Pink</option>
+                        <option value="#636e72">Grey</option>
+                    </select>
+                </div>
+                <div>Start: <input type="date" id="start" required></div>
+                <div>End: <input type="date" id="end" required></div>
+                <button type="submit" class="btn-add">Add Activity</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="calendar-container" class="calendar-section"></div>
+
+    <h3>Entries (Click to Edit)</h3>
+    <table id="dataTable">
+        <thead><tr><th>Activity</th><th>Start</th><th>End</th><th>Action</th></tr></thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+    let db = [];
+    let editTarget = null;
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    // Initialize
+    window.onload = function() {
+        try {
+            const data = localStorage.getItem('outreach_v4');
+            if (data) db = JSON.parse(data);
+            document.getElementById('system-check').innerText = "System Check: OK. Data Loaded.";
+            uiRefresh();
+        } catch (e) {
+            document.getElementById('system-check').innerText = "System Check: Storage Error.";
+        }
+    };
+
+    document.getElementById('mainForm').onsubmit = function(e) {
+        e.preventDefault();
+        const entry = {
+            id: editTarget || Date.now(),
+            name: document.getElementById('name').value,
+            color: document.getElementById('color').value,
+            start: document.getElementById('start').value,
+            end: document.getElementById('end').value
+        };
+
+        if (editTarget) {
+            db = db.map(item => item.id === editTarget ? entry : item);
+            editTarget = null;
+            document.querySelector('.btn-add').innerText = "Add Activity";
+        } else {
+            db.push(entry);
+        }
+
+        localStorage.setItem('outreach_v4', JSON.stringify(db));
+        this.reset();
+        uiRefresh();
+    };
+
+    function uiRefresh() {
+        renderCal();
+        renderTable();
+    }
+
+    function renderTable() {
+        const tbody = document.querySelector('#dataTable tbody');
+        tbody.innerHTML = "";
+        db.sort((a,b) => a.start.localeCompare(b.start)).forEach(item => {
+            const row = tbody.insertRow();
+            row.style.cursor = "pointer";
+            row.onclick = () => loadEdit(item.id);
+            row.innerHTML = `<td><span style="color:${item.color}">●</span> ${item.name}</td>
+                             <td>${item.start}</td><td>${item.end}</td>
+                             <td><button onclick="event.stopPropagation(); deleteRow(${item.id})">Del</button></td>`;
+        });
+    }
+
+    function loadEdit(id) {
+        const item = db.find(i => i.id === id);
+        editTarget = id;
+        document.getElementById('name').value = item.name;
+        document.getElementById('color').value = item.color;
+        document.getElementById('start').value = item.start;
+        document.getElementById('end').value = item.end;
+        document.querySelector('.btn-add').innerText = "Save Changes";
+        window.scrollTo(0,0);
+    }
+
+    function deleteRow(id) {
+        if(confirm("Delete?")) {
+            db = db.filter(i => i.id !== id);
+            localStorage.setItem('outreach_v4', JSON.stringify(db));
+            uiRefresh();
+        }
+    }
+
+    function renderCal() {
+        const cont = document.getElementById('calendar-container');
+        cont.innerHTML = "";
+        
+        let now = new Date();
+        let sMonth = now.getMonth();
+        let sYear = now.getFullYear();
+
+        if (db.length > 0) {
+            let sorted = [...db].sort((a,b) => a.start.localeCompare(b.start));
+            let d = new Date(sorted[0].start + "T00:00:00");
+            sMonth = d.getMonth();
+            sYear = d.getFullYear();
+        }
+
+        for (let i = 0; i < 12; i++) {
+            let m = (sMonth + i) % 12;
+            let y = sYear + Math.floor((sMonth + i) / 12);
+            cont.appendChild(createMonth(m, y));
+        }
+    }
+
+    function createMonth(m, y) {
+        const box = document.createElement('div');
+        box.className = 'month-wrap';
+        box.innerHTML = `<div class="month-label">${monthNames[m]} ${y}</div>`;
+        const grid = document.createElement('div');
+        grid.className = 'day-grid';
+        ['S','M','T','W','T','F','S'].forEach(d => grid.innerHTML += `<div class="d-head">${d}</div>`);
+
+        const first = new Date(y, m, 1).getDay();
+        const last = new Date(y, m + 1, 0).getDate();
+
+        for (let x = 0; x < first; x++) grid.innerHTML += `<div class="d-cell" style="border:none"></div>`;
+        for (let d = 1; d <= last; d++) {
+            const dStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const matches = db.filter(item => dStr >= item.start && dStr <= item.end);
+            
+            const cell = document.createElement('div');
+            cell.className = 'd-cell';
+            cell.innerHTML = `<span>${d}</span>`;
+            if (matches.length > 0) {
+                const bCont = document.createElement('div');
+                bCont.className = 'bars';
+                matches.forEach(match => {
+                    const b = document.createElement('div');
+                    b.className = 'b';
+                    b.style.background = match.color;
+                    bCont.appendChild(b);
+                });
+                cell.appendChild(bCont);
+                cell.title = matches.map(m => m.name).join(", ");
+            }
+            grid.appendChild(cell);
+        }
+        box.appendChild(grid);
+        return box;
+    }
+</script>
+</body>
+</html>
