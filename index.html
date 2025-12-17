@@ -3,145 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Philanthropy 12-Month Outreach Calendar</title>
+    <title>Dynamic Philanthropy Fiscal Calendar</title>
     <style>
-        :root {
-            --primary: #3498db;
-            --bg: #f4f7f9;
-            --card: #ffffff;
-            --text: #2c3e50;
-        }
-
+        :root { --primary: #3498db; --bg: #f4f7f9; --card: #ffffff; --text: #2c3e50; }
         body { font-family: 'Segoe UI', sans-serif; margin: 20px; background-color: var(--bg); color: var(--text); }
         .container { max-width: 1400px; margin: 0 auto; background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { text-align: center; border-bottom: 3px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px; }
         
-        h1 { text-align: center; border-bottom: 3px solid var(--primary); padding-bottom: 10px; }
-
-        /* Form Styling */
-        form { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #ddd; }
+        /* Form & Utility */
+        .controls { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        form { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #ddd; width: 100%; }
         .date-container { grid-column: span 4; background: white; padding: 15px; border: 1px dashed var(--primary); border-radius: 6px; }
         .date-range { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
         
         button { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; transition: 0.3s; }
         .btn-add { background-color: var(--primary); }
-        .btn-delete { background-color: #e74c3c; }
-        .btn-utility { background-color: #7f8c8d; }
+        .btn-util { background-color: #7f8c8d; font-size: 0.8em; }
+        .btn-fiscal { background-color: #9b59b6; }
+        .btn-del { background-color: #e74c3c; padding: 5px 10px; }
 
-        /* 12-Month Calendar Grid */
-        .calendar-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
-            gap: 20px; 
-            margin-top: 20px; 
-        }
-        .month-card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 10px; }
-        .month-name { text-align: center; font-weight: bold; padding-bottom: 5px; border-bottom: 1px solid #eee; margin-bottom: 10px; }
+        /* Calendar Styling */
+        .calendar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 15px; margin-top: 20px; }
+        .month-card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 10px; transition: transform 0.2s; }
+        .month-card:hover { border-color: var(--primary); }
+        .month-name { text-align: center; font-weight: bold; padding: 5px 0; background: #f8f9fa; border-radius: 4px; margin-bottom: 10px; }
         
         .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-        .day-label { font-size: 0.7em; text-align: center; font-weight: bold; color: #95a5a6; }
-        .day { 
-            aspect-ratio: 1 / 1; 
-            border: 1px solid #f0f0f0; 
-            font-size: 0.8em; 
-            position: relative; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            cursor: default;
-        }
+        .day-label { font-size: 0.65em; text-align: center; font-weight: bold; color: #95a5a6; padding-bottom: 4px; }
+        .day { aspect-ratio: 1.2 / 1; border: 1px solid #f0f0f0; font-size: 0.75em; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 2px; }
         .day.empty { border: none; }
-        .event-indicator { 
-            width: 4px; height: 4px; border-radius: 50%; 
-            position: absolute; bottom: 2px; 
-        }
         .day-num { position: relative; z-index: 2; }
         
-        /* Table Styling */
+        /* Visual Indicators */
+        .day.active { background-color: rgba(52, 152, 219, 0.1); border-bottom: 3px solid var(--primary); }
+        .tooltip { cursor: help; }
+        .tooltip:hover::after {
+            content: attr(data-events); position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%);
+            background: #2c3e50; color: white; padding: 6px 10px; border-radius: 4px; font-size: 0.8em; white-space: pre; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
         table { width: 100%; border-collapse: collapse; margin-top: 30px; }
         th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
         th { background: var(--primary); color: white; }
-        .status-overlap { color: #e67e22; font-weight: bold; }
-
-        .tooltip { position: relative; }
-        .tooltip:hover::after {
-            content: attr(data-events);
-            position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%);
-            background: #2c3e50; color: white; padding: 5px 10px; border-radius: 4px;
-            font-size: 0.7em; white-space: pre; z-index: 10; width: 120px;
-        }
-
-        @media print {
-            form, .btn-utility { display: none !important; }
-            .calendar-grid { grid-template-columns: repeat(3, 1fr); }
-        }
+        
+        @media print { .no-print { display: none !important; } .calendar-grid { grid-template-columns: repeat(3, 1fr); } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🗓️ 12-Month Outreach Calendar</h1>
+    <h1>🗓️ Philanthropy Outreach & Comms Calendar</h1>
 
-    <div style="text-align: center; margin-bottom: 20px;">
-        <button class="btn-utility" onclick="window.print()">Print / Save PDF</button>
-        <button class="btn-utility" onclick="exportData()" style="background:#27ae60">Copy Data</button>
-        <button class="btn-utility" onclick="importData()" style="background:#f39c12">Import Data</button>
+    <div class="controls no-print">
+        <div>
+            <button class="btn-fiscal" onclick="toggleFiscalMode()">Toggle Fiscal (Apr Start)</button>
+            <button class="btn-util" onclick="exportData()">📋 Copy Data</button>
+            <button class="btn-util" onclick="importData()">📥 Import Data</button>
+        </div>
+        <button class="btn-util" style="background: #2ecc71" onclick="window.print()">🖨️ Save PDF</button>
     </div>
 
-    <form id="outreachForm">
+    <form id="outreachForm" class="no-print">
         <div style="grid-column: span 2;">
-            <label>Activity Name</label><br>
-            <input type="text" id="itemName" style="width:100%" required>
+            <label>Activity Name</label>
+            <input type="text" id="itemName" style="width:100%" required placeholder="Campaign Name">
         </div>
         <div style="grid-column: span 2;">
-            <label>Color</label><br>
+            <label>Color Category</label>
             <select id="color" style="width:100%">
-                <option value="#3498db">Blue</option>
-                <option value="#2ecc71">Green</option>
-                <option value="#f1c40f">Yellow</option>
-                <option value="#e74c3c">Red</option>
-                <option value="#9b59b6">Purple</option>
-                <option value="#e67e22">Orange</option>
+                <option value="#3498db">Blue (General)</option>
+                <option value="#2ecc71">Green (Success/Major)</option>
+                <option value="#f1c40f">Yellow (Alert/Deadline)</option>
+                <option value="#e74c3c">Red (Critical)</option>
+                <option value="#9b59b6">Purple (Stewardship)</option>
+                <option value="#e67e22">Orange (Event)</option>
             </select>
         </div>
 
         <div class="date-container">
-            <label><strong>Time Frames</strong></label>
+            <label><strong>Outreach Timeframe(s)</strong></label>
             <div id="dateRanges">
                 <div class="date-range">
                     <input type="date" class="startDate" required>
                     <input type="date" class="endDate" required>
                 </div>
             </div>
-            <button type="button" style="background:#27ae60; margin-top:10px;" onclick="addDateRow()">+ Add Period</button>
+            <button type="button" class="btn-util" style="background:#27ae60; margin-top:5px;" onclick="addDateRow()">+ Add Another Range</button>
         </div>
-
-        <button type="submit" class="btn-add" style="grid-column: 4;">Add to Calendar</button>
+        <button type="submit" class="btn-add" style="grid-column: 4;">Update Calendar</button>
     </form>
 
     <div id="calendar" class="calendar-grid"></div>
 
-    <h2>🗓️ Chronological Breakdown</h2>
+    <h2>📑 Chronological Breakdown</h2>
     <table id="breakdownTable">
         <thead>
-            <tr><th>Activity</th><th>Start</th><th>End</th><th>Status</th><th>Actions</th></tr>
+            <tr><th>Activity</th><th>Dates</th><th>Status</th><th class="no-print">Action</th></tr>
         </thead>
         <tbody></tbody>
     </table>
 </div>
 
 <script>
-    let dataStore = JSON.parse(localStorage.getItem('calData')) || [];
-    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    
-    // You can adjust this to start with your Fiscal Year (e.g., 6 for July)
-    const startMonthIndex = 0; 
-    const currentYear = new Date().getFullYear();
+    let dataStore = JSON.parse(localStorage.getItem('fiscalData')) || [];
+    let fiscalMode = false; // Toggle for April Start
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
     function addDateRow() {
         const div = document.createElement('div');
         div.className = 'date-range';
         div.innerHTML = `<input type="date" class="startDate" required><input type="date" class="endDate" required>
-                         <button type="button" class="btn-delete" style="padding:5px 10px" onclick="this.parentElement.remove()">X</button>`;
+                         <button type="button" class="btn-del" onclick="this.parentElement.remove()">X</button>`;
         document.getElementById('dateRanges').appendChild(div);
     }
 
@@ -151,73 +123,111 @@
         document.querySelectorAll('.date-range').forEach(row => {
             ranges.push({ start: row.querySelector('.startDate').value, end: row.querySelector('.endDate').value });
         });
-        const entry = { id: Date.now(), name: document.getElementById('itemName').value, color: document.getElementById('color').value, ranges };
-        dataStore.push(entry);
+        dataStore.push({ id: Date.now(), name: document.getElementById('itemName').value, color: document.getElementById('color').value, ranges });
         saveAndUpdate();
         e.target.reset();
     };
 
     function saveAndUpdate() {
-        localStorage.setItem('calData', JSON.stringify(dataStore));
+        localStorage.setItem('fiscalData', JSON.stringify(dataStore));
         renderCalendar();
         renderTable();
+    }
+
+    function getStartPoint() {
+        if (fiscalMode) {
+            const today = new Date();
+            const year = today.getMonth() < 3 ? today.getFullYear() - 1 : today.getFullYear();
+            return { month: 3, year: year }; // April (index 3)
+        }
+        
+        // Find earliest date in data
+        let earliest = null;
+        dataStore.forEach(item => {
+            item.ranges.forEach(r => {
+                const d = new Date(r.start);
+                if (!earliest || d < earliest) earliest = d;
+            });
+        });
+
+        if (!earliest) {
+            const now = new Date();
+            return { month: now.getMonth(), year: now.getFullYear() };
+        }
+        return { month: earliest.getMonth(), year: earliest.getFullYear() };
     }
 
     function renderCalendar() {
         const container = document.getElementById('calendar');
         container.innerHTML = '';
+        const start = getStartPoint();
 
         for (let i = 0; i < 12; i++) {
-            const monthIdx = (startMonthIndex + i) % 12;
-            const year = startMonthIndex + i > 11 ? currentYear + 1 : currentYear;
-            container.appendChild(createMonthCard(monthIdx, year));
+            let m = start.month + i;
+            let y = start.year + Math.floor(m / 12);
+            m = m % 12;
+            container.appendChild(createMonthCard(m, y));
         }
     }
 
-    function createMonthCard(month, year) {
+    function createMonthCard(m, y) {
         const card = document.createElement('div');
         card.className = 'month-card';
-        card.innerHTML = `<div class="month-name">${months[month]} ${year}</div>`;
+        card.innerHTML = `<div class="month-name">${monthNames[m]} ${y}</div>`;
         
-        const daysGrid = document.createElement('div');
-        daysGrid.className = 'days-grid';
-        
-        ['S','M','T','W','T','F','S'].forEach(d => {
-            daysGrid.innerHTML += `<div class="day-label">${d}</div>`;
-        });
+        const grid = document.createElement('div');
+        grid.className = 'days-grid';
+        ['S','M','T','W','T','F','S'].forEach(d => grid.innerHTML += `<div class="day-label">${d}</div>`);
 
-        const firstDay = new Date(year, month, 1).getDay();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const first = new Date(y, m, 1).getDay();
+        const days = new Date(y, m + 1, 0).getDate();
 
-        for (let x = 0; x < firstDay; x++) daysGrid.innerHTML += `<div class="day empty"></div>`;
+        for (let x = 0; x < first; x++) grid.innerHTML += `<div class="day empty"></div>`;
 
-        for (let d = 1; d <= daysInMonth; d++) {
-            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-            const activeEvents = dataStore.filter(item => 
-                item.ranges.some(r => dateStr >= r.start && dateStr <= r.end)
-            );
-
+        for (let d = 1; d <= days; d++) {
+            const dStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const matches = dataStore.filter(item => item.ranges.some(r => dStr >= r.start && dStr <= r.end));
+            
             const dayEl = document.createElement('div');
             dayEl.className = 'day';
-            if (activeEvents.length > 0) {
-                dayEl.classList.add('tooltip');
-                dayEl.setAttribute('data-events', activeEvents.map(e => e.name).join('\n'));
-                // Use the color of the first event as a background tint
-                dayEl.style.backgroundColor = activeEvents[0].color + '33'; 
-                dayEl.style.borderBottom = `3px solid ${activeEvents[0].color}`;
+            if (matches.length > 0) {
+                dayEl.classList.add('active', 'tooltip');
+                dayEl.setAttribute('data-events', matches.map(e => e.name).join('\n'));
+                dayEl.style.backgroundColor = matches[0].color + '22';
+                dayEl.style.borderBottomColor = matches[0].color;
             }
             dayEl.innerHTML = `<span class="day-num">${d}</span>`;
-            daysGrid.appendChild(dayEl);
+            grid.appendChild(dayEl);
         }
-        card.appendChild(daysGrid);
+        card.appendChild(grid);
         return card;
     }
 
     function renderTable() {
         const tbody = document.querySelector('#breakdownTable tbody');
         tbody.innerHTML = '';
-        const allRows = [];
-        dataStore.forEach(item => {
-            item.ranges.forEach(r => allRows.push({...r, name: item.name, color: item.color, parentId: item.id}));
+        let all = [];
+        dataStore.forEach(item => item.ranges.forEach(r => all.push({...r, name: item.name, color: item.color, id: item.id})));
+        all.sort((a,b) => new Date(a.start) - new Date(b.start));
+
+        all.forEach(row => {
+            const overlap = all.some(r => r.id !== row.id && row.start < r.end && row.end > r.start);
+            tbody.innerHTML += `<tr>
+                <td style="border-left: 5px solid ${row.color}"><strong>${row.name}</strong></td>
+                <td>${row.start} to ${row.end}</td>
+                <td>${overlap ? '<span style="color:#e67e22">⚠️ Overlap</span>' : '✅ Clear'}</td>
+                <td class="no-print"><button class="btn-del" onclick="deleteItem(${row.id})">Delete</button></td>
+            </tr>`;
         });
-        allRows.sort((
+    }
+
+    function toggleFiscalMode() { fiscalMode = !fiscalMode; renderCalendar(); }
+    function deleteItem(id) { if(confirm("Delete activity?")) { dataStore = dataStore.filter(i => i.id !== id); saveAndUpdate(); } }
+    function exportData() { navigator.clipboard.writeText(JSON.stringify(dataStore)); alert("Data copied to clipboard!"); }
+    function importData() { const v = prompt("Paste data:"); if(v) { dataStore = JSON.parse(v); saveAndUpdate(); } }
+
+    window.onload = saveAndUpdate;
+</script>
+</body>
+</html>
+
