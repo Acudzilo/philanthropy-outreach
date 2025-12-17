@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Philanthropy Outreach Timeline Chart (Complete)</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    
+    <style>
+        /* --- General & Structure --- */
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f7f9; }
+        .container { max-width: 1200px; margin: 0 auto; background-color: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 20px; text-align: center; }
+        h2 { color: #2c3e50; margin-top: 40px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+        
+        /* --- Form & Grid --- */
+        form { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; margin-bottom: 30px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 5px; background-color: #ecf0f1; }
+        label { font-weight: bold; color: #34495e; }
+        input[type="text"], input[type="date"], select, button { padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        
+        /* Buttons */
+        button { color: white; border: none; cursor: pointer; transition: background-color 0.3s; }
+        .add-update-btn { background-color: #3498db; }
+        .add-update-btn:hover { background-color: #2980b9; }
+        .delete-btn { background-color: #e74c3c; }
+        .delete-btn:hover { background-color: #c0392b; }
+        .delete-btn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+        
+        #add-date-range { background-color: #27ae60; margin-top: 10px; }
+        #add-date-range:hover { background-color: #229954; }
+        .remove-date { background-color: #e74c3c; width: 30px; padding: 5px; }
+        
+        /* Action Bar */
+        #actionBar { display: flex; justify-content: flex-start; gap: 10px; margin-bottom: 20px; }
+        #loadPlanButton { background-color: #f39c12; }
+        #loadPlanButton:hover { background-color: #e67e22; }
+        #printButton { background-color: #9b59b6; }
+        #printButton:hover { background-color: #8e44ad; }
+
+        /* Chart and Table Styling */
+        #chartContainer { width: 100%; height: 500px; margin-top: 20px; }
+        #breakdownTable { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        #breakdownTable th, #breakdownTable td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        #breakdownTable th { background-color: #3498db; color: white; }
+        .overlap-flag { background-color: #f39c12; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+        .no-overlap-flag { background-color: #2ecc71; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+
+        /* Editing Mode Highlight */
+        #outreachForm.editing { border-color: #f1c40f; box-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
+
+        /* --- Print Styles (for PDF/Printing) --- */
+        @media print {
+            body { margin: 0; background-color: #fff; }
+            .container { max-width: 100%; box-shadow: none; padding: 0; }
+            /* Hide UI elements not needed for print */
+            #outreachForm, #actionBar, #printButton, #loadPlanButton { display: none; }
+            /* Ensure chart and table are visible and fit */
+            #chartContainer { height: 70vh !important; margin-top: 10px; }
+            h1, h2 { margin-left: 20px; margin-right: 20px; }
+            #breakdownTable { page-break-inside: avoid; margin: 20px; }
+            #breakdownTable th, #breakdownTable td { font-size: 10pt; padding: 5px; }
+            /* Ensure the chart canvas prints clearly */
+            canvas { width: 100% !important; max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>📈 Donor Outreach & Communications Timeline</h1>
+
+        <div id="actionBar">
+            <button id="loadPlanButton">Load Last Saved Plan</button>
+            <button id="printButton">Print/Save PDF</button>
+        </div>
+        
+        <form id="outreachForm">
+            <label for="itemName">Activity Name:</label>
+            <input type="text" id="itemName" required>
+
+            <label for="color">Activity Color:</label>
+            <select id="color" required>
+                <option value="#3498db">Blue (Default)</option>
+                <option value="#2ecc71">Green</option>
+                <option value="#f1c40f">Yellow</option>
+                <option value="#e74c3c">Red</option>
+                <option value="#9b59b6">Purple</option>
+                <option value="#e67e22">Orange</option>
+                <option value="#1abc9c">Turquoise</option>
+            </select>
+            
+            <div class="date-container" style="grid-column: 1 / -1;">
+                <label>Date Ranges (Start and End):</label>
+                <div id="dateRanges">
+                    <div class="date-range">
+                        <input type="date" class="startDate" required>
+                        <input type="date" class="endDate" required>
+                    </div>
+                </div>
+                <button type="button" id="add-date-range">Add Another Date Range</button>
+            </div>
+            
+            <button type="button" id="deleteEntryButton" class="delete-btn" disabled>Delete Entry</button>
+            <button type="submit" id="submitButton" class="add-update-btn" style="grid-column: 4 / 5;">Add to Chart</button>
+        </form>
+
+        <div id="chartContainer">
+            <canvas id="ganttChart"></canvas>
+        </div>
+
+        <h2>🗓️ Chronological Breakdown & Overlap Report</h2>
+        <table id="breakdownTable">
+            <thead>
+                <tr>
+                    <th>Activity</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Overlap?</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+        let chartInstance = null;
+        let dataStore = []; 
+        let currentEditingIndex = -1;
+        const LOCAL_STORAGE_KEY = 'philanthropyPlanData';
+
+        const dateFormatter = new Intl.DateTimeFormat('en-US', { 
+            month: 'short', day: 'numeric', year: 'numeric' 
+        });
+
+        // Helper function to format Date object to yyyy-mm-dd string for input field
+        const dateToInputString = (date) => {
+            if (!(date instanceof Date) || isNaN(date)) return '';
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        // -------------------------------------------------------------
+        // LOCAL STORAGE FUNCTIONS
+        // -------------------------------------------------------------
+        function savePlan() {
+            try {
+                // Prepare data for JSON stringification: convert Date objects to strings
+                const serializableData = dataStore.map(item => ({
+                    ...item,
+                    ranges: item.ranges.map(range => ({
+                        start: range.start.toISOString(),
+                        end: range.end.toISOString()
+                    }))
+                }));
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(serializableData));
+                console.log("Plan saved successfully.");
+            } catch (e) {
+                console.error("Error saving plan:", e);
+            }
+        }
+
+        function loadPlan(ctx) {
+            try {
+                const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (savedData) {
+                    const parsedData = JSON.parse(savedData);
+                    // Convert date strings back to Date objects
+                    dataStore = parsedData.map(item => ({
+                        ...item,
+                        ranges: item.ranges.map(range => ({
+                            start: new Date(range.start),
+                            end: new Date(range.end)
+                        }))
+                    }));
+                    updateChart(ctx);
+                    console.log("Plan loaded successfully.");
+                    return true;
+                }
+                return false;
+            } catch (e) {
+                console.error("Error loading plan:", e);
+                return false;
+            }
+        }
+
+        // -------------------------------------------------------------
+        // DOM Loading and Initialization
+        // -------------------------------------------------------------
+        document.addEventListener('DOMContentLoaded', () => {
+            const ctx = document.getElementById('ganttChart').getContext('2d');
+            
+            // Load data if available
+            loadPlan(ctx);
+            
+            attachEventListeners(ctx);
+            setupChartClickHandler(ctx);
+        });
+
+        function resetFormUI(color) {
+            document.getElementById('outreachForm').reset();
+            document.getElementById('color').value = color || '#3498db'; 
+            
+            // Reset date ranges to one input
+            const dateRangesDiv = document.getElementById('dateRanges');
+            dateRangesDiv.innerHTML = `
+                <div class="date-range">
+                    <input type="date" class="startDate" required>
+                    <input type="date" class="endDate" required>
+                </div>
+            `;
+            
+            // Reset form for "Add" mode
+            currentEditingIndex = -1;
+            document.getElementById('submitButton').textContent = 'Add to Chart';
+            document.getElementById('deleteEntryButton').disabled = true;
+            document.getElementById('outreachForm').classList.remove('editing');
+
+            // Re-attach listeners to the single initial date range remove button
+            attachRemoveDateListeners();
+        }
+
+        function populateFormForEdit(index) {
+            currentEditingIndex = index;
+            const item = dataStore[index];
+
+            if (!item) return;
+
+            // Set Form UI to "Edit" mode
+            document.getElementById('outreachForm').classList.add('editing');
+            document.getElementById('submitButton').textContent = 'Save Edits';
+            document.getElementById('deleteEntryButton').disabled = false;
+
+            // Populate Item Details
+            document.getElementById('itemName').value = item.name;
+            document.getElementById('color').value = item.color;
+
+            // Populate Date Ranges
+            const dateRangesDiv = document.getElementById('dateRanges');
+            dateRangesDiv.innerHTML = ''; 
+
+            item.ranges.forEach(range => {
+                const newRange = document.createElement('div');
+                newRange.className = 'date-range';
+                newRange.innerHTML = `
+                    <input type="date" class="startDate" value="${dateToInputString(range.start)}" required>
+                    <input type="date" class="endDate" value="${dateToInputString(range.end)}" required>
+                    <button type="button" class="remove-date">X</button>
+                `;
+                dateRangesDiv.appendChild(newRange);
+            });
+            
+            // Ensure listeners are attached to all the new remove buttons
+            attachRemoveDateListeners();
+        }
+
+        function attachRemoveDateListeners() {
+             document.querySelectorAll('#dateRanges .date-range .remove-date').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.target.closest('.date-range').remove();
+                });
+            });
+        }
+        
+        function attachEventListeners(ctx) {
+            // Add Date Range Listener
+            document.getElementById('add-date-range').addEventListener('click', () => {
+                const container = document.getElementById('dateRanges');
+                const newRange = document.createElement('div');
+                newRange.className = 'date-range';
+                newRange.innerHTML = `
+                    <input type="date" class="startDate" required>
+                    <input type="date" class="endDate" required>
+                    <button type="button" class="remove-date">X</button>
+                `;
+                container.appendChild(newRange);
+                newRange.querySelector('.remove-date').addEventListener('click', (e) => {
+                    e.target.closest('.date-range').remove();
+                });
+            });
+
+            // Initial remove button listeners
+            attachRemoveDateListeners(); 
+
+
+            // --- Action Bar Listeners ---
+            
+            document.getElementById('printButton').addEventListener('click', () => {
+                window.print();
+            });
+
+            document.getElementById('loadPlanButton').addEventListener('click', () => {
+                if (confirm("This will overwrite the current plan with the last saved version. Continue?")) {
+                    loadPlan(ctx);
+                    resetFormUI();
+                }
+            });
+
+
+            // 1. Form Submission (Add/Edit Logic)
+            document.getElementById('outreachForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const itemName = document.getElementById('itemName').value;
+                const color = document.getElementById('color').value;
+                const dateRanges = [];
+                let isValid = true;
+
+                document.querySelectorAll('#dateRanges .date-range').forEach(rangeDiv => {
+                    const startDate = rangeDiv.querySelector('.startDate').value;
+                    const endDate = rangeDiv.querySelector('.endDate').value;
+                    
+                    if (startDate && endDate) {
+                        const start = new Date(startDate);
+                        const end = new Date(endDate); 
+                        
+                        // Validation Check: Start must be before End
+                        if (start.getTime() >= end.getTime()) {
+                            alert(`Error: Start Date (${startDate}) cannot be on or after End Date (${endDate}).`);
+                            isValid = false;
+                            return; 
+                        }
+                        dateRanges.push({ start, end });
+                    }
+                });
+
+                if (!isValid || dateRanges.length === 0) {
+                    if(isValid) alert("Please input at least one complete date range.");
+                    return; 
+                }
+
+                // Create the new/updated item object
+                const newItem = { name: itemName, color: color, ranges: dateRanges };
+                
+                if (currentEditingIndex > -1) {
+                    // EDIT MODE: Replace the existing item
+                    dataStore[currentEditingIndex] = newItem;
+                } else {
+                    // ADD MODE: Push a new item
+                    dataStore.push(newItem);
+                }
+
+                // Save data and update chart
+                savePlan();
+                resetFormUI(color);
+                updateChart(ctx);
+            });
+            
+            // 2. Delete Entry Logic
+            document.getElementById('deleteEntryButton').addEventListener('click', function() {
+                if (currentEditingIndex > -1) {
+                    const itemName = dataStore[currentEditingIndex].name;
+                    if (confirm(`Are you sure you want to delete the activity: "${itemName}"?`)) {
+                        dataStore.splice(currentEditingIndex, 1); // Remove from array
+                        savePlan();
+                        resetFormUI();
+                        updateChart(ctx);
+                    }
+                }
+            });
+        }
+        
+        function setupChartClickHandler(ctx) {
+            const canvas = document.getElementById('ganttChart');
+            canvas.addEventListener('click', (e) => {
+                const elements = chartInstance.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
+
+                if (elements.length > 0) {
+                    const clickedElement = elements[0];
+                    const datasetIndex = clickedElement.datasetIndex;
+                    const activityName = chartInstance.data.datasets[datasetIndex].label;
+
+                    // Find the index in dataStore based on the activity name
+                    // (This assumes activity names are unique, which is standard for a Gantt chart Y-axis)
+                    const dataStoreIndex = dataStore.findIndex(item => item.name === activityName);
+                    
+                    if (dataStoreIndex !== -1) {
+                        populateFormForEdit(dataStoreIndex);
+                    }
+                }
+            });
+        }
+
+
+        // --- Chart & Table Generation ---
+
+        function updateChart(ctx) {
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            // 1. Prep Data: Flatten multi-range data for Chart.js and prepare for overlap check
+            const uniqueLabels = [...new Set(dataStore.map(item => item.name))];
+            const datasets = [];
+            let allRanges = []; 
+
+            dataStore.forEach(item => {
+                item.ranges.forEach(range => {
+                    // **CRITICAL FIX:** Each date range must be its own dataset object in Chart.js,
+                    // but they must share the same Y-axis label (item.name) for them to display 
+                    // on the same row.
+                    datasets.push({
+                        label: item.name,
+                        backgroundColor: item.color,
+                        borderColor: item.color,
+                        borderWidth: 1,
+                        data: [{
+                            x: [range.start, range.end],
+                            y: item.name // The Y-axis category
+                        }],
+                        yAxisID: 'y'
+                    });
+                    
+                    allRanges.push({
+                        name: item.name,
+                        start: range.start,
+                        end: range.end,
+                        color: item.color
+                    });
+                });
+            });
+
+            // 2. Overlap Check and Sorting
+            allRanges.sort((a, b) => a.start - b.start);
+
+            allRanges.forEach((current, index) => {
+                current.isOverlap = false;
+                for (let i = 0; i < allRanges.length; i++) {
+                    if (i !== index) {
+                        const other = allRanges[i];
+                        if (current.start.getTime() < other.end.getTime() && current.end.getTime() > other.start.getTime()) {
+                            current.isOverlap = true;
+                            break;
+                        }
+                    }
+                }
+            });
+            
+            // 3. Update the Breakdown Table
+            const tbody = document.getElementById('breakdownTable').querySelector('tbody');
+            tbody.innerHTML = ''; 
+
+            allRanges.forEach(range => {
+                const row = tbody.insertRow();
+                row.insertCell().textContent = range.name;
+                row.insertCell().textContent = dateFormatter.format(range.start);
+                row.insertCell().textContent = dateFormatter.format(range.end);
+
+                const overlapCell = row.insertCell();
+                const overlapSpan = document.createElement('span');
+                
+                if (range.isOverlap) {
+                    overlapSpan.className = 'overlap-flag';
+                    overlapSpan.textContent = 'OVERLAP';
+                } else {
+                    overlapSpan.className = 'no-overlap-flag';
+                    overlapSpan.textContent = 'Clear';
+                }
+                overlapCell.appendChild(overlapSpan);
+            });
+
+
+            // 4. Create the Chart
+            const config = {
+                type: 'bar',
+                data: {
+                    // Use unique labels for the Y-axis categories
+                    labels: uniqueLabels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y', 
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'month',
+                                tooltipFormat: 'MMM d, yyyy',
+                                displayFormats: { month: 'MMM yyyy' }
+                            },
+                            min: getMinDate(),
+                            max: getMaxDate(),
+                            title: { display: true, text: 'Timeframe' },
+                            stacked: true 
+                        },
+                        y: {
+                            type: 'category',
+                            reverse: true, 
+                            title: { display: true, text: 'Outreach Activity' },
+                            stacked: true 
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const name = context.dataset.label;
+                                    const start = dateFormatter.format(new Date(context.parsed._custom.barStart));
+                                    const end = dateFormatter.format(new Date(context.parsed._custom.barEnd));
+                                    return `${name}: ${start} - ${end}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+            
+            // 
+            chartInstance = new Chart(ctx, config);
+        }
+        
+        // --- Helper functions for chart bounds (Unchanged) ---
+        function getMinDate() {
+            let dates = [];
+            dataStore.forEach(item => { item.ranges.forEach(range => { dates.push(range.start.getTime()); }); });
+            if (dates.length === 0) return new Date();
+            const min = new Date(Math.min(...dates));
+            min.setDate(1); 
+            min.setMonth(min.getMonth() - 1); 
+            return min;
+        }
+
+        function getMaxDate() {
+            let dates = [];
+            dataStore.forEach(item => { item.ranges.forEach(range => { dates.push(range.end.getTime()); }); });
+            if (dates.length === 0) { const now = new Date(); now.setMonth(now.getMonth() + 3); return now; }
+            const max = new Date(Math.max(...dates));
+            max.setMonth(max.getMonth() + 1); 
+            max.setDate(1); 
+            return max;
+        }
+    </script>
+</body>
+</html>
