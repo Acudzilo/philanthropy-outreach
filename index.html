@@ -2,26 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Philanthropy Master Calendar - Edit Enabled</title>
+    <title>Philanthropy Master Calendar v3</title>
     <style>
         :root { --primary: #3498db; --edit-bg: #fffdf0; --edit-border: #f1c40f; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; border: 1px solid #ccc; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; padding: 20px; color: #333; margin: 0; }
+        .container { max-width: 1200px; margin: 20px auto; background: white; padding: 25px; border-radius: 12px; border: 1px solid #ccc; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         
-        /* Form Styling */
-        form { background: #f8f9fa; padding: 20px; border-radius: 8px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; border: 1px solid #ddd; transition: 0.3s; }
+        form { background: #f8f9fa; padding: 20px; border-radius: 8px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; border: 1px solid #ddd; }
         form.editing { background: var(--edit-bg); border: 2px solid var(--edit-border); }
         .full-width { grid-column: 1 / -1; }
         
         input, select, button { padding: 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; }
-        label { font-weight: bold; font-size: 0.9rem; color: #555; }
-        
         .btn-main { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: bold; }
-        .btn-save { background: var(--edit-border); color: #333; border: none; cursor: pointer; font-weight: bold; }
-        .btn-cancel { background: #95a5a6; color: white; border: none; cursor: pointer; }
-
-        /* Calendar Styling */
-        .month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+        .btn-save { background: var(--edit-border); color: #333; border: none; font-weight: bold; cursor: pointer;}
+        
+        .calendar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 20px; }
         .month { background: white; border: 1px solid #ddd; padding: 10px; border-radius: 6px; min-height: 250px; }
         .month-title { text-align: center; font-weight: bold; margin-bottom: 10px; padding: 5px; background: #34495e; color: white; border-radius: 4px; }
         
@@ -29,19 +24,16 @@
         .day { aspect-ratio: 1.1; border: 1px solid #f9f9f9; font-size: 11px; position: relative; display: flex; align-items: center; justify-content: center; background: #fff; }
         .day-num { z-index: 5; font-weight: bold; }
         
-        /* Bar Stacking */
         .bar-stack { position: absolute; bottom: 0; width: 100%; display: flex; flex-direction: column; gap: 1px; }
-        .bar { height: 4px; width: 100%; opacity: 0.9; }
+        .bar { height: 4px; width: 100%; }
 
-        /* Table Styling */
         table { width: 100%; border-collapse: collapse; margin-top: 30px; background: white; }
         th, td { border: 1px solid #eee; padding: 12px; text-align: left; }
         th { background: #34495e; color: white; }
         tr.row-item:hover { background: #f1f8ff; cursor: pointer; }
-        .color-swatch { width: 15px; height: 15px; display: inline-block; border-radius: 3px; margin-right: 10px; vertical-align: middle; }
-        
-        #debug-box { margin-top: 40px; padding: 10px; background: #222; color: #0f0; font-family: monospace; font-size: 11px; border-radius: 4px; }
-        @media print { .no-print { display: none; } }
+        .swatch { width: 12px; height: 12px; display: inline-block; border-radius: 2px; margin-right: 8px; }
+
+        #status-bar { margin-top: 20px; padding: 10px; background: #222; color: #0f0; font-family: monospace; font-size: 12px; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -49,13 +41,13 @@
 <div class="container">
     <h2 style="text-align: center;">📊 Philanthropy Outreach Master Calendar</h2>
     
-    <form id="calForm" class="no-print">
+    <form id="calForm">
         <div class="full-width">
-            <label id="mode-text">Add New Activity</label><br>
+            <label id="mode-text"><strong>Add New Activity</strong></label><br>
             <input type="text" id="name" style="width:98%" required placeholder="Activity Name">
         </div>
         <div>
-            <label>Color Category:</label><br>
+            <label>Color:</label><br>
             <select id="color" style="width:100%">
                 <option value="#3498db">Blue</option>
                 <option value="#2ecc71">Green</option>
@@ -71,94 +63,3 @@
         </div>
         <div>
             <label>Start Date:</label><br>
-            <input type="date" id="start" style="width:100%" required>
-        </div>
-        <div>
-            <label>End Date:</label><br>
-            <input type="date" id="end" style="width:100%" required>
-        </div>
-        <div style="display: flex; gap: 5px; align-self: end;">
-            <button type="button" id="cancelBtn" class="btn-cancel" style="display:none;" onclick="cancelEdit()">Cancel</button>
-            <button type="submit" id="submitBtn" class="btn-main">Add to Calendar</button>
-        </div>
-    </form>
-
-    <div id="calendar" class="month-grid"></div>
-
-    <h3>📋 Chronological List (Click row to edit)</h3>
-    <table id="listTable">
-        <thead>
-            <tr>
-                <th>Activity Name</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-
-    <div id="debug-box">System Status: Ready.</div>
-</div>
-
-<script>
-    let entries = [];
-    let editId = null;
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-    window.onload = function() {
-        try {
-            const saved = localStorage.getItem('phil_calendar_v2');
-            if (saved) {
-                entries = JSON.parse(saved);
-                document.getElementById('debug-box').innerText = "Status: " + entries.length + " entries loaded.";
-            }
-            refresh();
-        } catch (err) {
-            document.getElementById('debug-box').innerText = "Status: Error loading data.";
-        }
-    };
-
-    document.getElementById('calForm').onsubmit = function(e) {
-        e.preventDefault();
-        
-        const name = document.getElementById('name').value;
-        const color = document.getElementById('color').value;
-        const start = document.getElementById('start').value;
-        const end = document.getElementById('end').value;
-
-        if (editId) {
-            // Update existing
-            const index = entries.findIndex(item => item.id === editId);
-            entries[index] = { id: editId, name, color, start, end };
-            document.getElementById('debug-box').innerText = "Status: Updated " + name;
-        } else {
-            // Add new
-            const newEntry = { id: Date.now(), name, color, start, end };
-            entries.push(newEntry);
-            document.getElementById('debug-box').innerText = "Status: Added " + name;
-        }
-
-        saveAndRefresh();
-        cancelEdit(); // Reset form
-    };
-
-    function saveAndRefresh() {
-        localStorage.setItem('phil_calendar_v2', JSON.stringify(entries));
-        refresh();
-    }
-
-    function refresh() {
-        renderCalendar();
-        renderTable();
-    }
-
-    function renderTable() {
-        const tbody = document.querySelector('#listTable tbody');
-        tbody.innerHTML = "";
-        
-        // Sort table chronologically
-        const sortedEntries = [...entries].sort((a,b) => a.start.localeCompare(b.start));
-
-        sortedEntries.forEach(item => {
-            const row
