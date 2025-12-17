@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Entry Philanthropy Calendar</title>
+    <title>Philanthropy Master Calendar</title>
     <style>
         :root { --primary: #3498db; --bg: #f4f7f9; --card: #ffffff; --text: #2c3e50; --edit: #f1c40f; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 20px; background-color: var(--bg); color: var(--text); }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 20px; background-color: var(--bg); color: var(--text); }
         .container { max-width: 1400px; margin: 0 auto; background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         h1 { text-align: center; border-bottom: 3px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px; }
         
         .controls { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-        form { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #ddd; width: 100%; transition: 0.3s; }
+        form { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #ddd; width: 100%; transition: 0.3s; box-sizing: border-box;}
         form.editing-mode { border: 2px solid var(--edit); background: #fffdf5; box-shadow: 0 0 10px rgba(241, 196, 15, 0.3); }
         
         .date-container { grid-column: span 4; background: white; padding: 15px; border: 1px dashed var(--primary); border-radius: 6px; }
@@ -24,7 +24,7 @@
         .btn-del { background-color: #e74c3c; padding: 5px 10px; }
 
         .calendar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 15px; margin-top: 20px; }
-        .month-card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 10px; }
+        .month-card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 10px; min-height: 250px;}
         .month-name { text-align: center; font-weight: bold; padding: 5px 0; background: #f8f9fa; border-radius: 4px; margin-bottom: 10px; }
         
         .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
@@ -43,23 +43,12 @@
             border-radius: 2px; 
             cursor: pointer; 
             overflow: hidden;
+            min-height: 40px;
         }
         .day.empty { border: none; cursor: default; }
 
-        /* Multi-color bar container */
-        .event-bars {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-        }
-        .event-bar {
-            height: 4px;
-            width: 100%;
-        }
+        .event-bars { width: 100%; display: flex; flex-direction: column; gap: 1px; position: absolute; bottom: 0; left: 0; }
+        .event-bar { height: 4px; width: 100%; }
         
         .tooltip:hover::after {
             content: attr(data-events); position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%);
@@ -78,7 +67,7 @@
 <body>
 
 <div class="container">
-    <h1>🗓️ Philanthropy Outreach & Comms Calendar</h1>
+    <h1>🗓️ Outreach & Communications Calendar</h1>
 
     <div class="controls no-print">
         <div>
@@ -136,6 +125,7 @@
 </div>
 
 <script>
+    // Self-contained logic: No external libraries required for core rendering
     let dataStore = JSON.parse(localStorage.getItem('fiscalData')) || [];
     let fiscalMode = false;
     let currentEditId = null;
@@ -154,7 +144,9 @@
         e.preventDefault();
         const ranges = [];
         document.querySelectorAll('.date-range').forEach(row => {
-            ranges.push({ start: row.querySelector('.startDate').value, end: row.querySelector('.endDate').value });
+            const s = row.querySelector('.startDate').value;
+            const e = row.querySelector('.endDate').value;
+            if(s && e) ranges.push({ start: s, end: e });
         });
 
         const entry = { 
@@ -174,6 +166,103 @@
         resetForm();
     };
 
+    function saveAndUpdate() {
+        localStorage.setItem('fiscalData', JSON.stringify(dataStore));
+        renderCalendar();
+        renderTable();
+    }
+
+    function renderCalendar() {
+        const container = document.getElementById('calendar');
+        container.innerHTML = '';
+        const start = getStartPoint();
+
+        for (let i = 0; i < 12; i++) {
+            let m = start.month + i;
+            let y = start.year + Math.floor(m / 12);
+            container.appendChild(createMonthCard(m % 12, y));
+        }
+    }
+
+    function createMonthCard(m, y) {
+        const card = document.createElement('div');
+        card.className = 'month-card';
+        card.innerHTML = `<div class="month-name">${monthNames[m]} ${y}</div>`;
+        const grid = document.createElement('div');
+        grid.className = 'days-grid';
+        ['S','M','T','W','T','F','S'].forEach(d => grid.innerHTML += `<div class="day-label">${d}</div>`);
+        
+        const firstDay = new Date(y, m, 1).getDay();
+        const daysCount = new Date(y, m + 1, 0).getDate();
+
+        for (let x = 0; x < firstDay; x++) grid.innerHTML += `<div class="day empty"></div>`;
+
+        for (let d = 1; d <= daysCount; d++) {
+            const dStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const matches = dataStore.filter(item => item.ranges.some(r => dStr >= r.start && dStr <= r.end));
+            
+            const dayEl = document.createElement('div');
+            dayEl.className = 'day';
+            dayEl.innerHTML = `<span class="day-num">${d}</span>`;
+            
+            if (matches.length > 0) {
+                dayEl.classList.add('tooltip');
+                dayEl.setAttribute('data-events', matches.map(e => e.name).join('\n'));
+                
+                const barContainer = document.createElement('div');
+                barContainer.className = 'event-bars';
+                matches.forEach(match => {
+                    const bar = document.createElement('div');
+                    bar.className = 'event-bar';
+                    bar.style.backgroundColor = match.color;
+                    barContainer.appendChild(bar);
+                });
+                dayEl.appendChild(barContainer);
+                dayEl.onclick = () => editItem(matches[0].id);
+            }
+            grid.appendChild(dayEl);
+        }
+        card.appendChild(grid);
+        return card;
+    }
+
+    function getStartPoint() {
+        if (fiscalMode) {
+            const today = new Date();
+            const year = today.getMonth() < 3 ? today.getFullYear() - 1 : today.getFullYear();
+            return { month: 3, year: year };
+        }
+        let earliest = null;
+        dataStore.forEach(item => item.ranges.forEach(r => {
+            const d = new Date(r.start + "T00:00:00"); // ISO parse
+            if (!earliest || d < earliest) earliest = d;
+        }));
+        const ref = earliest || new Date();
+        return { month: ref.getMonth(), year: ref.getFullYear() };
+    }
+
+    function renderTable() {
+        const tbody = document.querySelector('#breakdownTable tbody');
+        tbody.innerHTML = '';
+        let allItems = [];
+        dataStore.forEach(item => {
+            item.ranges.forEach(r => allItems.push({...r, name: item.name, color: item.color, id: item.id}));
+        });
+        allItems.sort((a,b) => new Date(a.start) - new Date(b.start));
+
+        allItems.forEach(row => {
+            const overlap = allItems.some(other => other.id !== row.id && row.start <= other.end && row.end >= other.start);
+            const tr = document.createElement('tr');
+            tr.className = 'clickable';
+            tr.onclick = () => editItem(row.id);
+            tr.innerHTML = `<td style="border-left: 5px solid ${row.color}"><strong>${row.name}</strong></td>
+                            <td>${row.start} to ${row.end}</td>
+                            <td>${overlap ? '<span style="color:#e67e22">⚠️ Overlap</span>' : '✅ Clear'}</td>
+                            <td class="no-print"><button class="btn-del" onclick="event.stopPropagation(); deleteItem(${row.id})">Delete</button></td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
     function editItem(id) {
         const item = dataStore.find(i => i.id === id);
         if (!item) return;
@@ -181,4 +270,18 @@
         document.getElementById('itemName').value = item.name;
         document.getElementById('color').value = item.color;
         const rangeContainer = document.getElementById('dateRanges');
-        rangeContainer
+        rangeContainer.innerHTML = '';
+        item.ranges.forEach(r => addDateRow(r.start, r.end));
+        document.getElementById('outreachForm').classList.add('editing-mode');
+        document.getElementById('formLabel').innerHTML = "<strong>Editing: " + item.name + "</strong>";
+        document.getElementById('submitBtn').innerText = "Save Changes";
+        document.getElementById('submitBtn').className = "btn-save";
+        document.getElementById('cancelEdit').style.display = "inline-block";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetForm() {
+        currentEditId = null;
+        document.getElementById('outreachForm').reset();
+        document.getElementById('outreachForm').classList.remove('editing-mode');
+        document.getElementById('formLabel').innerText = "Add New Activity";
